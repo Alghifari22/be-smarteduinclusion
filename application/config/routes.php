@@ -62,5 +62,13 @@ $route['api/auth/me'] = 'Auth/me';
 $route['api/dashboard/staffTU'] = 'Dashboard/staffTU';
 
 // User Endpoints
-$route['api/users/(:num)'] = 'Users/handle/$1';
+$route['api/users/(:any)'] = 'Users/handle/$1';
 $route['api/users'] = 'Users/handle';
+
+// Mapel Endpoints
+$route['api/mapel/(:any)'] = 'Mapel/handle/$1';
+$route['api/mapel'] = 'Mapel/handle';
+
+// Kelas Endpoints
+$route['api/kelas/(:any)'] = 'Kelas/handle/$1';
+$route['api/kelas'] = 'Kelas/handle';
