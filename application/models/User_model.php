@@ -13,8 +13,10 @@ class User_model extends \CI_Model {
     /**
      * Get all users
      */
-    public function get_all()
+    public function get_all($limit = 10, $offset = 0)
     {
+        $this->db->limit($limit, $offset);
+
         $query = $this->db->get($this->table);
         return $query->result();
     }
@@ -41,9 +43,8 @@ class User_model extends \CI_Model {
      * Create new user
      */
     public function create($data)
-    {        
-        $this->db->insert($this->table, $data);
-        return $this->db->insert_id();
+    {
+        return $this->db->insert($this->table, $data);
     }
 
     /**
@@ -51,7 +52,7 @@ class User_model extends \CI_Model {
      */
     public function update($id, $data)
     {
-        $this->db->where('id', $id);
+        $this->db->where('id_pengguna', $id);
         return $this->db->update($this->table, $data);
     }
 
@@ -60,7 +61,7 @@ class User_model extends \CI_Model {
      */
     public function delete($id)
     {
-        $this->db->where('id', $id);
+        $this->db->where('id_pengguna', $id);
         return $this->db->delete($this->table);
     }
 
@@ -73,6 +74,18 @@ class User_model extends \CI_Model {
         return $query->num_rows() > 0;
     }
 
+
+    /**
+     * Check if email exists except
+     */
+    public function email_exists_except($email, $id_pengguna)
+    {
+        return $this->db
+            ->where('email', $email)
+            ->where('id_pengguna !=', $id_pengguna)
+            ->count_all_results($this->table) > 0;
+    }
+
     /**
      * Check if user exists by ID
      */
@@ -80,6 +93,14 @@ class User_model extends \CI_Model {
     {
         $query = $this->db->get_where($this->table, array('id_pengguna' => $id));
         return $query->num_rows() > 0;
+    }
+
+    /**
+     * Get total user
+     */
+    public function count_all()
+    {
+        return $this->db->count_all($this->table);
     }
 }
 ?>

@@ -60,3 +60,7 @@ $route['api/auth/me'] = 'Auth/me';
 
 // Dashboard Endpoints
 $route['api/dashboard/staffTU'] = 'Dashboard/staffTU';
+
+// User Endpoints
+$route['api/users/(:num)'] = 'Users/handle/$1';
+$route['api/users'] = 'Users/handle';
