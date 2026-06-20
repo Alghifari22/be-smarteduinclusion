@@ -5,7 +5,7 @@ class Users extends \CI_Controller {
     public function __construct()
     {
         parent::__construct();
-        $this->load->model('User_model');
+        $this->load->model(['User_model', 'Mapel_model', 'Kelas_model']);
         $this->load->library('jwt');
     }
 
@@ -50,6 +50,25 @@ class Users extends \CI_Controller {
             $input['id_pengguna'] = $this->User_model->generate_id_pengguna('ORT');
         }
 
+        if ($role == 'Guru' && empty($input['kode_mapel'])) {
+            $errors['kode_mapel'] = "Kode Mata Pelajaran is required for Guru";
+        }
+
+        if ($role == 'Siswa' && empty($input['kode_kelas'])) {
+            $errors['kode_kelas'] = "Kode Kelas is required for Siswa";
+        }
+
+        if ($role == 'Guru' && !empty($input['kode_mapel'])) {
+            if (!$this->Mapel_model->exists($input['kode_mapel'])) {
+                $errors['kode_mapel'] = "Kode Mata Pelajaran not found";
+            }
+        }
+
+        if ($role == 'Siswa' && !empty($input['kode_kelas'])) {
+            if (!$this->Kelas_model->exists($input['kode_kelas'])) {
+                $errors['kode_kelas'] = "Kode Kelas not found";
+            }
+        }
         if (empty($input['nama'])) $errors['nama'] = "Nama is required!";
 
         if (empty($input['email'])) {
@@ -78,6 +97,7 @@ class Users extends \CI_Controller {
     {
         $errors = [];
 
+        $role = $input['role'] ?? '';
         if (empty($input['nama'])) $errors['nama'] = "Nama is required!";
 
         if (empty($input['email'])) {
@@ -86,6 +106,26 @@ class Users extends \CI_Controller {
             $errors['email'] = "Invalid email format!";
         } elseif ($this->User_model->email_exists_except($input['email'], $id_pengguna)) {
             $errors['email'] = "Email already registered!";
+        }
+
+        if ($role == 'Guru' && empty($input['kode_mapel'])) {
+            $errors['kode_mapel'] = "Kode Mata Pelajaran is required for Guru";
+        }
+
+        if ($role == 'Siswa' && empty($input['kode_kelas'])) {
+            $errors['kode_kelas'] = "Kode Kelas is required for Siswa";
+        }
+
+        if ($role == 'Guru' && !empty($input['kode_mapel'])) {
+            if (!$this->Mapel_model->exists($input['kode_mapel'])) {
+                $errors['kode_mapel'] = "Kode Mata Pelajaran not found";
+            }
+        }
+
+        if ($role == 'Siswa' && !empty($input['kode_kelas'])) {
+            if (!$this->Kelas_model->exists($input['kode_kelas'])) {
+                $errors['kode_kelas'] = "Kode Kelas not found";
+            }
         }
 
         if (!empty($input['password']) && strlen($input['password']) < 6) {
@@ -255,7 +295,9 @@ class Users extends \CI_Controller {
                 'jenis_kelamin' => $input['jenis_kelamin'],
                 'password' => password_hash($input['password'], PASSWORD_BCRYPT),
                 'alamat' => htmlspecialchars($input['alamat']),
-                'role' => $input['role']
+                'role' => $input['role'],
+                'kode_mapel' => $input['role'] == 'Guru' ? $input['kode_mapel'] : null,
+                'kode_kelas' => $input['role'] == 'Siswa' ? $input['kode_kelas'] : null
             ];
 
             $insert = $this->User_model->create($user_data);
@@ -281,7 +323,9 @@ class Users extends \CI_Controller {
                     'tanggal_lahir' => $input['tanggal_lahir'],
                     'jenis_kelamin' => $input['jenis_kelamin'],
                     'alamat' => $input['alamat'],
-                    'role' => $input['role']
+                    'role' => $input['role'],
+                    'kode_mapel' => $input['role'] == 'Guru' ? ($input['kode_mapel'] ?? null) : null,
+                    'kode_kelas' => $input['role'] == 'Siswa' ? ($input['kode_kelas'] ?? null) : null,
                 ]
             ]);
             exit;
@@ -349,7 +393,9 @@ class Users extends \CI_Controller {
                 'jenis_kelamin' => $input['jenis_kelamin'],
                 'password' => password_hash($input['password'], PASSWORD_BCRYPT),
                 'alamat' => htmlspecialchars($input['alamat']),
-                'role' => $input['role']
+                'role' => $input['role'],
+                'kode_mapel' => $input['role'] == 'Guru' ? $input['kode_mapel'] : null,
+                'kode_kelas' => $input['role'] == 'Siswa' ? $input['kode_kelas'] : null
             ];
 
             $update = $this->User_model->update($id, $user_data);
@@ -375,7 +421,9 @@ class Users extends \CI_Controller {
                     'tanggal_lahir' => $input['tanggal_lahir'],
                     'jenis_kelamin' => $input['jenis_kelamin'],
                     'alamat' => $input['alamat'],
-                    'role' => $input['role']
+                    'role' => $input['role'],
+                    'kode_mapel' => $input['role'] == 'Guru' ? ($input['kode_mapel'] ?? null) : null,
+                    'kode_kelas' => $input['role'] == 'Siswa' ? ($input['kode_kelas'] ?? null) : null,
                 ]
             ]);
             exit;
