@@ -73,3 +73,16 @@ $route['api/mapel'] = 'Mapel/handle';
 // Kelas Endpoints
 $route['api/kelas/(:any)'] = 'Kelas/handle/$1';
 $route['api/kelas'] = 'Kelas/handle';
+
+// Materi Endpoints
+$route['api/siswa/materi'] = 'Materi/materi_siswa';
+$route['api/materi/(:any)/detail'] = 'Materi/detail_materi/$1';
+$route['api/materi/(:any)/progress'] = 'Materi/update_progress/$1';
+
+// Soal Endpoints
+$route['api/siswa/soal'] = 'Materi/soal_siswa';
+$route['api/siswa/progress/(:any)'] = 'Latihan/progress_latihan/$1';
+$route['api/siswa/update/(:any)/progress'] = 'Latihan/update_progress_latihan/$1';
+$route['api/latihan/jawab'] = 'Latihan/jawab';
+$route['api/latihan/(:any)/selesai'] = 'Latihan/selesai/$1';
+$route['api/latihan/(:any)'] = 'Latihan/detail/$1';
