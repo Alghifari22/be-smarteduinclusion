@@ -64,5 +64,57 @@ class Dashboard extends \CI_Controller {
             exit;
         }
     }
+
+    /**
+     * Dashboard Role Siswa
+     * POST /api/dashboard/siswa
+     * Need Token
+     */
+    public function siswa(){
+         header('Content-Type: application/json; charset=utf-8');
+        ob_clean();
+        
+        try{
+            // Get token from header
+            $token = $this->jwt->get_token_from_request();
+
+            if (!$token) {
+                http_response_code(401);
+                echo json_encode([
+                    'status' => false,
+                    'message' => 'No token provided'
+                ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+                exit;
+            }
+
+            // Verify token
+            $decoded = $this->jwt->verify($token);
+
+            if (!$decoded) {
+                http_response_code(401);
+                echo json_encode([
+                    'status' => false,
+                    'message' => 'Invalid or expired token'
+                ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+                exit;
+            }
+
+            $data = $this->Dashboard_model->get_dashboard_siswa($decoded->id_pengguna);
+            http_response_code(200);
+            echo json_encode([
+                'status' => true,
+                'message' => 'Dashboard Siswa retrieved successfully',
+                'data' => $data,
+            ]);
+            exit;
+        }catch(Exception $e){
+            http_response_code(500);
+            echo json_encode([
+                'status' => false,
+                'message' => 'Server error: ' . $e->getMessage()
+            ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+            exit;
+        }
+    }
 }
 ?>
