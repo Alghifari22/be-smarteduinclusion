@@ -54,54 +54,56 @@ $route['404_override'] = '';
 $route['translate_uri_dashes'] = FALSE;
 
 // Auth Endpoints
-$route['api/auth/login'] = 'Auth/login';
-$route['api/auth/logout'] = 'Auth/logout';
-$route['api/auth/me'] = 'Auth/me';
+$route['auth/login'] = 'Auth/login';
+$route['auth/logout'] = 'Auth/logout';
+$route['auth/me'] = 'Auth/me';
 
 // Dashboard Endpoints
-$route['api/dashboard/staffTU'] = 'Dashboard/staffTU';
-$route['api/dashboard/siswa'] = 'Dashboard/siswa';
+$route['dashboard/staffTU'] = 'Dashboard/staffTU';
+$route['dashboard/siswa'] = 'Dashboard/siswa';
 
 // User Endpoints
-$route['api/users/(:any)'] = 'Users/handle/$1';
-$route['api/users'] = 'Users/handle';
+$route['users'] = 'Users/handle';
+$route['users/(:any)'] = 'Users/handle/$1';
 
 // Mapel Endpoints
-$route['api/mapel/(:any)'] = 'Mapel/handle/$1';
-$route['api/mapel'] = 'Mapel/handle';
+$route['mapel'] = 'Mapel/handle';
+$route['mapel/(:any)'] = 'Mapel/handle/$1';
 
 // Kelas Endpoints
-$route['api/kelas/(:any)'] = 'Kelas/handle/$1';
-$route['api/kelas'] = 'Kelas/handle';
+$route['kelas'] = 'Kelas/handle';
+$route['kelas/(:any)'] = 'Kelas/handle/$1';
 
 // Materi Endpoints
-$route['api/siswa/materi'] = 'Materi/materi_siswa';
-$route['api/materi/(:any)/detail'] = 'Materi/detail_materi/$1';
-$route['api/materi/(:any)/progress'] = 'Materi/update_progress/$1';
+$route['siswa/materi'] = 'Materi/materi_siswa';
+$route['materi/(:any)/detail'] = 'Materi/detail_materi/$1';
+$route['materi/(:any)/progress'] = 'Materi/update_progress/$1';
+
+$route['materi'] = 'Materi/index';
+$route['materi/(:any)/details'] = 'Materi/pages/$1';
+$route['detail-materi/(:any)'] = 'Materi/page_detail/$1';
+$route['materi/(:any)'] = 'Materi/detail/$1';
 
 // Soal Endpoints
-$route['api/siswa/soal'] = 'Materi/soal_siswa';
-$route['api/siswa/progress/(:any)'] = 'Latihan/progress_latihan/$1';
-$route['api/siswa/update/(:any)/progress'] = 'Latihan/update_progress_latihan/$1';
-$route['api/latihan/jawab'] = 'Latihan/jawab';
-$route['api/latihan/(:any)/selesai'] = 'Latihan/selesai/$1';
-$route['api/latihan/(:any)'] = 'Latihan/detail/$1';$route['api/dashboard/guru'] = 'Dashboard/guru';
-$route['api/dashboard/orang-tua'] = 'Dashboard/orang_tua';
+$route['siswa/soal'] = 'Materi/soal_siswa';
+$route['siswa/progress/(:any)'] = 'Latihan/progress_latihan/$1';
+$route['siswa/update/(:any)/progress'] = 'Latihan/update_progress_latihan/$1';
+$route['latihan/jawab'] = 'Latihan/jawab';
+$route['latihan/(:any)/selesai'] = 'Latihan/selesai/$1';
+$route['latihan/(:any)'] = 'Latihan/detail/$1';
+$route['dashboard/guru'] = 'Dashboard/guru';
+$route['dashboard/orang-tua'] = 'Dashboard/orang_tua';
 
 // Modul Endpoints
-$route['api/modul'] = 'Modul/index';
-$route['api/modul/(:any)'] = 'Modul/detail/$1';
-
-// Materi Endpoints
-$route['api/materi'] = 'Materi/index';
-$route['api/materi/(:any)'] = 'Materi/detail/$1';
+$route['modul'] = 'Modul/index';
+$route['modul/(:any)'] = 'Modul/detail/$1';
 
 // Soal dan Jawaban Endpoints
-$route['api/soal'] = 'Soal/index';
-$route['api/soal/(:any)'] = 'Soal/detail/$1';
-$route['api/soal/(:any)/jawaban'] = 'Soal/jawaban/$1';
+$route['soal'] = 'Soal/index';
+$route['soal/(:any)'] = 'Soal/detail/$1';
+$route['soal/(:any)/jawaban'] = 'Soal/jawaban/$1';
 
 // Laporan Endpoints
-$route['api/laporan'] = 'Laporan/index';
-$route['api/laporan/siswa/(:any)'] = 'Laporan/siswa/$1';
-$route['api/laporan-anak'] = 'Dashboard/laporan_anak';
+$route['laporan'] = 'Laporan/index';
+$route['laporan/siswa/(:any)'] = 'Laporan/siswa/$1';
+$route['laporan-anak'] = 'Dashboard/laporan_anak';

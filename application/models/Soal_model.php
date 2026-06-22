@@ -41,7 +41,15 @@ class Soal_model extends \CI_Model {
                 ->get('jawaban')
                 ->row();
 
+            $jawaban_siswa = $this->db
+                ->select('jawaban')
+                ->where('id_pengguna', $id_pengguna)
+                ->where('kode_soal', $s->kode_soal)
+                ->get('jawaban_siswa')
+                ->row();
+
             $s->opsi = $jawaban;
+            $s->jawaban_siswa = $jawaban_siswa->jawaban ?? null;
         }
 
         $total_soal = count($soal);
@@ -121,13 +129,14 @@ class Soal_model extends \CI_Model {
         ];
     }
 
-    public function simpan_nilai($kode_materi, $nilai)
+    public function simpan_nilai($kode_materi, $nilai, $id_pengguna)
     {
         return $this->db->insert('nilai_siswa', [
             'kode_nilai' => 'NIL-' . time(),
             'nilai' => $nilai,
             'tanggal_nilai' => date('Y-m-d'),
-            'kode_materi' => $kode_materi
+            'kode_materi' => $kode_materi,
+            'id_pengguna' => $id_pengguna
         ]);
     }
 

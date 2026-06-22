@@ -126,23 +126,24 @@ class Dashboard extends \CI_Controller
             ob_clean();
         }
 
-        $id_pengguna = $this->input->get('id_pengguna');
+        // Verify token
+        $decoded = $this->jwt->verify($token);
 
-        if (!$id_pengguna) {
-            http_response_code(400);
+        if (!$decoded) {
+            http_response_code(401);
             echo json_encode([
                 'status' => false,
-                'message' => 'id_pengguna wajib dikirim'
-            ]);
-            return;
+                'message' => 'Invalid or expired token'
+            ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+            exit;
         }
 
         $data = [
-            'kode_mapel' => $this->Dashboard_model->get_guru_mapel($id_pengguna),
-            'progress' => $this->Dashboard_model->get_progress_rata_kelas($id_pengguna),
-            'siswa_tertinggal' => $this->Dashboard_model->get_total_siswa_tertinggal($id_pengguna),
-            'kuis_dinilai' => $this->Dashboard_model->get_total_kuis_dinilai($id_pengguna),
-            'daftar_siswa' => $this->Dashboard_model->get_daftar_siswa_progress($id_pengguna),
+            'kode_mapel' => $this->Dashboard_model->get_guru_mapel($decoded->id_pengguna),
+            'progress' => $this->Dashboard_model->get_progress_rata_kelas($decoded->id_pengguna),
+            'siswa_tertinggal' => $this->Dashboard_model->get_total_siswa_tertinggal($decoded->id_pengguna),
+            'kuis_dinilai' => $this->Dashboard_model->get_total_kuis_dinilai($decoded->id_pengguna),
+            'daftar_siswa' => $this->Dashboard_model->get_daftar_siswa_progress($decoded->id_pengguna),
             'activities' => $this->Dashboard_model->get_recent_activities(5)
         ];
 

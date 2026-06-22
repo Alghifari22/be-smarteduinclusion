@@ -7,6 +7,21 @@ class Modul extends CI_Controller
     {
         parent::__construct();
         $this->load->model('Modul_model');
+        $this->load->library('jwt');
+    }
+
+    private function guru_mapel()
+    {
+        $token = $this->jwt->get_token_from_request();
+        $decoded = $token ? $this->jwt->verify($token) : false;
+        if (!$decoded) {
+            http_response_code(401);
+            header('Content-Type: application/json; charset=utf-8');
+            echo json_encode(['status' => false, 'message' => 'Unauthorized']);
+            exit;
+        }
+
+        return $this->Modul_model->get_kode_mapel_guru($decoded->id_pengguna);
     }
 
     private function response_json($status_code, $data)
@@ -20,12 +35,15 @@ class Modul extends CI_Controller
     public function index()
     {
         $method = $_SERVER['REQUEST_METHOD'];
+        $kode_mapel_guru = $this->guru_mapel();
+
+        if (!$kode_mapel_guru) {
+            return $this->response_json(403, ['status' => false, 'message' => 'Akun guru belum memiliki mata pelajaran']);
+        }
 
         if ($method === 'GET') {
             $kode_kelas = $this->input->get('kode_kelas');
-            $kode_mapel = $this->input->get('kode_mapel');
-
-            $modul = $this->Modul_model->get_all_with_relasi($kode_kelas, $kode_mapel);
+            $modul = $this->Modul_model->get_all_with_relasi($kode_kelas, $kode_mapel_guru);
 
             return $this->response_json(200, [
                 'status' => true,
@@ -47,6 +65,11 @@ class Modul extends CI_Controller
     public function detail($kode_modul)
     {
         $method = $_SERVER['REQUEST_METHOD'];
+        $kode_mapel_guru = $this->guru_mapel();
+
+        if (!$kode_mapel_guru || !$this->Modul_model->belongs_to_mapel($kode_modul, $kode_mapel_guru)) {
+            return $this->response_json(404, ['status' => false, 'message' => 'Modul tidak ditemukan']);
+        }
 
         if ($method === 'GET') {
             return $this->show($kode_modul);
@@ -91,6 +114,9 @@ class Modul extends CI_Controller
         if (!$input) {
             $input = $this->input->post();
         }
+
+        $kode_mapel_guru = $this->guru_mapel();
+        $input['kode_mapel'] = $kode_mapel_guru;
 
         if (
             empty($input['judul']) ||
@@ -157,6 +183,8 @@ class Modul extends CI_Controller
         if (!$input) {
             $input = $this->input->post();
         }
+
+        $input['kode_mapel'] = $this->guru_mapel();
 
         if (
             empty($input['judul']) ||

@@ -61,27 +61,6 @@ class Dashboard_model extends \CI_Model
         ];
     }
 
-    public function get_latest_quiz()
-    {
-        return $this->db
-            ->select('
-                gamifikasi.kode_gamifikasi,
-                gamifikasi.judul,
-                COUNT(soal_gam.kode_soalgam) as jumlah_soal
-            ')
-            ->from('gamifikasi')
-            ->join(
-                'soal_gam',
-                'soal_gam.kode_gamifikasi = gamifikasi.kode_gamifikasi',
-                'left'
-            )
-            ->group_by('gamifikasi.kode_gamifikasi')
-            ->order_by('gamifikasi.tanggal_dibuat', 'DESC')
-            ->limit(1)
-            ->get()
-            ->row();
-    }
-
     private function get_materi_hari_ini($id_siswa)
     {
         $siswa = $this->db
@@ -125,11 +104,10 @@ class Dashboard_model extends \CI_Model
         return [
             'progress_hari_ini' => $this->get_progress_siswa($id_siswa),
             'materi_hari_ini' => $this->get_materi_hari_ini($id_siswa),
-            'kuis_harian' => $this->get_latest_quiz($siswa->kode_kelas)
         ];
     }
 
-    public function get_guru_mapel(string $id_pengguna): ?string
+    public function get_guru_mapel($id_pengguna)
     {
         $guru = $this->db
             ->select('kode_mapel')
@@ -138,7 +116,7 @@ class Dashboard_model extends \CI_Model
             ->get('users')
             ->row();
 
-        return $guru->kode_mapel ?? null;
+        return $guru->kode_mapel;
     }
 
     public function get_progress_rata_kelas(string $id_pengguna, ?string $kode_materi = null): array
@@ -205,10 +183,8 @@ class Dashboard_model extends \CI_Model
         if (!$kode_mapel) return 0;
 
         return $this->db
-            ->select('js.kode_jawabansis')
-            ->from('jawaban_siswa js')
-            ->join('soal s', 's.kode_soal = js.kode_soal')
-            ->join('materi m', 'm.kode_materi = s.kode_materi')
+            ->from('nilai_siswa ns')
+            ->join('materi m', 'm.kode_materi = ns.kode_materi')
             ->join('modul mo', 'mo.kode_modul = m.kode_modul')
             ->where('mo.kode_mapel', $kode_mapel)
             ->count_all_results();

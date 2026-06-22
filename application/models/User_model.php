@@ -102,5 +102,25 @@ class User_model extends \CI_Model {
     {
         return $this->db->count_all($this->table);
     }
+
+    public function generate_id_pengguna($prefix)
+    {
+        $this->db->select('id_pengguna');
+        $this->db->like('id_pengguna', $prefix, 'after');
+        $this->db->order_by('id_pengguna', 'DESC');
+        $this->db->limit(1);
+
+        $last = $this->db->get('users')->row();
+
+        if (!$last) {
+            return $prefix . '001';
+        }
+
+        $last_number = (int) substr($last->id_pengguna, strlen($prefix));
+
+        $new_number = $last_number + 1;
+
+        return $prefix . str_pad($new_number, 3, '0', STR_PAD_LEFT);
+    }
 }
 ?>

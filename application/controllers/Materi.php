@@ -20,6 +20,15 @@ class Materi extends \CI_Controller {
         return $this->jwt->verify($token);
     }
 
+    private function authenticated_user()
+    {
+        $decoded = $this->authenticate();
+        if (!$decoded) {
+            $this->unauthorized('Unauthorized: Invalid or missing token');
+        }
+        return $decoded;
+    }
+
     private function unauthorized($message = 'Unauthorized')
     {
         http_response_code(401);
@@ -230,11 +239,15 @@ class Materi extends \CI_Controller {
     public function index()
     {
         $method = $_SERVER['REQUEST_METHOD'];
+        $decoded = $this->authenticated_user();
+
+        if (!$this->Materi_model->get_kode_mapel_guru($decoded->id_pengguna)) {
+            return $this->response_json(403, ['status' => false, 'message' => 'Akun guru belum memiliki mata pelajaran']);
+        }
 
         if ($method === 'GET') {
             $kode_modul = $this->input->get('kode_modul');
-
-            $materi = $this->Materi_model->get_all_with_modul($kode_modul);
+            $materi = $this->Materi_model->get_all_for_guru($decoded->id_pengguna, $kode_modul);
 
             return $this->response_json(200, [
                 'status' => true,
@@ -256,6 +269,11 @@ class Materi extends \CI_Controller {
     public function detail($kode_materi)
     {
         $method = $_SERVER['REQUEST_METHOD'];
+        $decoded = $this->authenticated_user();
+
+        if (!$this->Materi_model->materi_belongs_to_guru($kode_materi, $decoded->id_pengguna)) {
+            return $this->response_json(404, ['status' => false, 'message' => 'Materi tidak ditemukan']);
+        }
 
         if ($method === 'GET') {
             return $this->show($kode_materi);
@@ -301,6 +319,8 @@ class Materi extends \CI_Controller {
             $input = $this->input->post();
         }
 
+        $decoded = $this->authenticated_user();
+
         if (
             empty($input['judul']) ||
             empty($input['kode_modul'])
@@ -311,7 +331,7 @@ class Materi extends \CI_Controller {
             ]);
         }
 
-        if (!$this->Materi_model->modul_exists($input['kode_modul'])) {
+        if (!$this->Materi_model->modul_belongs_to_guru($input['kode_modul'], $decoded->id_pengguna)) {
             return $this->response_json(404, [
                 'status' => false,
                 'message' => 'Kode modul tidak ditemukan'
@@ -356,6 +376,8 @@ class Materi extends \CI_Controller {
             $input = $this->input->post();
         }
 
+        $decoded = $this->authenticated_user();
+
         if (
             empty($input['judul']) ||
             empty($input['kode_modul'])
@@ -366,7 +388,7 @@ class Materi extends \CI_Controller {
             ]);
         }
 
-        if (!$this->Materi_model->modul_exists($input['kode_modul'])) {
+        if (!$this->Materi_model->modul_belongs_to_guru($input['kode_modul'], $decoded->id_pengguna)) {
             return $this->response_json(404, [
                 'status' => false,
                 'message' => 'Kode modul tidak ditemukan'
@@ -417,5 +439,75 @@ class Materi extends \CI_Controller {
             'status' => true,
             'message' => 'Materi berhasil dihapus'
         ]);
+    }
+
+    public function pages($kode_materi)
+    {
+        $decoded = $this->authenticated_user();
+        if (!$this->Materi_model->materi_belongs_to_guru($kode_materi, $decoded->id_pengguna)) {
+            return $this->response_json(404, ['status' => false, 'message' => 'Materi tidak ditemukan']);
+        }
+
+        if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+            return $this->response_json(200, [
+                'status' => true,
+                'message' => 'Detail materi berhasil diambil',
+                'data' => $this->Materi_model->get_detail_pages($kode_materi)
+            ]);
+        }
+
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $input = json_decode($this->input->raw_input_stream, true) ?: $this->input->post();
+            if (empty($input['judul']) || empty($input['isi']) || empty($input['urutan'])) {
+                return $this->response_json(400, ['status' => false, 'message' => 'judul, isi, dan urutan wajib diisi']);
+            }
+
+            $data = [
+                'kode_detail_materi' => $this->Materi_model->generate_kode_detail_materi(),
+                'kode_materi' => $kode_materi,
+                'urutan' => (int) $input['urutan'],
+                'judul' => trim($input['judul']),
+                'isi' => $input['isi'],
+                'gambar' => isset($input['gambar']) && $input['gambar'] !== '' ? $input['gambar'] : null
+            ];
+
+            if (!$this->Materi_model->create_detail($data)) {
+                return $this->response_json(500, ['status' => false, 'message' => 'Gagal menambahkan detail materi']);
+            }
+            return $this->response_json(201, ['status' => true, 'message' => 'Detail materi berhasil ditambahkan', 'data' => $data]);
+        }
+
+        return $this->response_json(405, ['status' => false, 'message' => 'Method tidak diizinkan']);
+    }
+
+    public function page_detail($kode_detail)
+    {
+        $decoded = $this->authenticated_user();
+        $detail = $this->Materi_model->get_detail_page($kode_detail);
+        if (!$detail || !$this->Materi_model->materi_belongs_to_guru($detail->kode_materi, $decoded->id_pengguna)) {
+            return $this->response_json(404, ['status' => false, 'message' => 'Detail materi tidak ditemukan']);
+        }
+
+        if ($_SERVER['REQUEST_METHOD'] === 'PUT') {
+            $input = json_decode($this->input->raw_input_stream, true) ?: $this->input->post();
+            if (empty($input['judul']) || empty($input['isi']) || empty($input['urutan'])) {
+                return $this->response_json(400, ['status' => false, 'message' => 'judul, isi, dan urutan wajib diisi']);
+            }
+            $data = [
+                'urutan' => (int) $input['urutan'],
+                'judul' => trim($input['judul']),
+                'isi' => $input['isi'],
+                'gambar' => isset($input['gambar']) && $input['gambar'] !== '' ? $input['gambar'] : null
+            ];
+            $this->Materi_model->update_detail($kode_detail, $data);
+            return $this->response_json(200, ['status' => true, 'message' => 'Detail materi berhasil diperbarui']);
+        }
+
+        if ($_SERVER['REQUEST_METHOD'] === 'DELETE') {
+            $this->Materi_model->delete_detail($kode_detail);
+            return $this->response_json(200, ['status' => true, 'message' => 'Detail materi berhasil dihapus']);
+        }
+
+        return $this->response_json(405, ['status' => false, 'message' => 'Method tidak diizinkan']);
     }
 }

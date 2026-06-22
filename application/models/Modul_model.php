@@ -42,6 +42,26 @@ class Modul_model extends CI_Model
             ->result();
     }
 
+    public function get_kode_mapel_guru($id_pengguna)
+    {
+        $guru = $this->db
+            ->select('kode_mapel')
+            ->where('id_pengguna', $id_pengguna)
+            ->where('role', 'Guru')
+            ->get('users')
+            ->row();
+
+        return $guru ? $guru->kode_mapel : null;
+    }
+
+    public function belongs_to_mapel($kode_modul, $kode_mapel)
+    {
+        return $this->db
+            ->where('kode_modul', $kode_modul)
+            ->where('kode_mapel', $kode_mapel)
+            ->count_all_results($this->table) > 0;
+    }
+
     public function get_by_id($kode_modul)
     {
         return $this->db

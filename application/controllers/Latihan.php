@@ -219,7 +219,8 @@ class Latihan extends \CI_Controller {
 
             $this->Soal_model->simpan_nilai(
                 $kode_materi,
-                $hasil['nilai']
+                $hasil['nilai'],
+                $decoded->id_pengguna
             );
 
             echo json_encode([
