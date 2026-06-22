@@ -183,4 +183,227 @@ class Dashboard_model extends \CI_Model
 
         return $hasil;
     }
+
+    public function get_orangtua($id_pengguna)
+    {
+        return $this->db
+            ->select('id_pengguna, nama, email, role')
+            ->where('id_pengguna', $id_pengguna)
+            ->where('role', 'Orang Tua')
+            ->get('users')
+            ->row();
+    }
+
+    public function get_anak($id_pengguna)
+    {
+        return $this->db
+            ->select('
+                u.id_pengguna,
+                u.nama,
+                u.email,
+                u.kode_kelas,
+                k.nama_kelas
+            ')
+            ->from('users u')
+            ->join('kelas k', 'k.kode_kelas = u.kode_kelas', 'left')
+            ->where('u.NISN', $id_pengguna)
+            ->where('u.role', 'Siswa')
+            ->get()
+            ->row();
+    }
+
+    public function get_ringkasan($id_siswa)
+    {
+        return $this->db
+            ->select('
+                COUNT(DISTINCT m.kode_materi) AS total_materi,
+                COUNT(DISTINCT CASE 
+                    WHEN pms.status = "Selesai" THEN pms.kode_materi 
+                END) AS materi_selesai,
+                ROUND(
+                    IFNULL(
+                        COUNT(DISTINCT CASE 
+                            WHEN pms.status = "Selesai" THEN pms.kode_materi 
+                        END) / NULLIF(COUNT(DISTINCT m.kode_materi), 0) * 100,
+                    0)
+                ) AS persentase_progress,
+                COUNT(DISTINCT js.kode_jawabansis) AS total_jawaban,
+                SUM(CASE 
+                    WHEN js.jawaban = j.jawaban_benar THEN 1 
+                    ELSE 0 
+                END) AS jawaban_benar,
+                ROUND(
+                    IFNULL(
+                        SUM(CASE 
+                            WHEN js.jawaban = j.jawaban_benar THEN 1 
+                            ELSE 0 
+                        END) / NULLIF(COUNT(DISTINCT js.kode_jawabansis), 0) * 100,
+                    0)
+                ) AS rata_rata_nilai
+            ', false)
+            ->from('users u')
+            ->join('modul mo', 'mo.kode_kelas = u.kode_kelas', 'left')
+            ->join('materi m', 'm.kode_modul = mo.kode_modul', 'left')
+            ->join('progres_materi_siswa pms', 'pms.id_pengguna = u.id_pengguna AND pms.kode_materi = m.kode_materi', 'left')
+            ->join('soal s', 's.kode_materi = m.kode_materi', 'left')
+            ->join('jawaban j', 'j.kode_soal = s.kode_soal', 'left')
+            ->join('jawaban_siswa js', 'js.id_pengguna = u.id_pengguna AND js.kode_soal = s.kode_soal', 'left')
+            ->where('u.id_pengguna', $id_siswa)
+            ->get()
+            ->row();
+    }
+
+    public function get_progress_mingguan($id_siswa)
+    {
+        return $this->db
+            ->select('
+            DATE(pms.tanggal_mulai) AS tanggal,
+            COUNT(*) AS total_aktivitas
+        ', false)
+            ->from('progres_materi_siswa pms')
+            ->where('pms.id_pengguna', $id_siswa)
+            ->where('pms.tanggal_mulai >=', date('Y-m-d 00:00:00', strtotime('-7 days')))
+            ->group_by('DATE(pms.tanggal_mulai)')
+            ->order_by('tanggal', 'ASC')
+            ->get()
+            ->result();
+    }
+
+    public function get_fokus_minggu_ini($id_siswa)
+    {
+        $materi = $this->db
+            ->select('m.judul AS judul_materi, mo.judul AS judul_modul')
+            ->from('users u')
+            ->join('modul mo', 'mo.kode_kelas = u.kode_kelas')
+            ->join('materi m', 'm.kode_modul = mo.kode_modul')
+            ->join('progres_materi_siswa pms', 'pms.id_pengguna = u.id_pengguna AND pms.kode_materi = m.kode_materi', 'left')
+            ->where('u.id_pengguna', $id_siswa)
+            ->where('(pms.status IS NULL OR pms.status != "Selesai")', null, false)
+            ->order_by('m.kode_materi', 'ASC')
+            ->limit(1)
+            ->get()
+            ->row();
+
+        if (!$materi) {
+            return [
+                'judul' => 'Pertahankan progres belajar',
+                'deskripsi' => 'Anak sudah menyelesaikan materi yang tersedia. Tetap dampingi agar konsisten belajar.'
+            ];
+        }
+
+        return [
+            'judul' => 'Fokus pada ' . $materi->judul_materi,
+            'deskripsi' => 'Bantu anak memahami materi ' . $materi->judul_materi . ' pada modul ' . $materi->judul_modul . '.'
+        ];
+    }
+
+    public function get_tugas_belum_selesai($id_siswa)
+    {
+        return $this->db
+            ->select('
+                m.kode_materi,
+                m.judul AS judul_materi,
+                mo.judul AS judul_modul,
+                IFNULL(pms.status, "Belum Mulai") AS status
+            ', false)
+            ->from('users u')
+            ->join('modul mo', 'mo.kode_kelas = u.kode_kelas', 'left')
+            ->join('materi m', 'm.kode_modul = mo.kode_modul', 'left')
+            ->join('progres_materi_siswa pms', 'pms.id_pengguna = u.id_pengguna AND pms.kode_materi = m.kode_materi', 'left')
+            ->where('u.id_pengguna', $id_siswa)
+            ->where('(pms.status IS NULL OR pms.status != "Selesai")', null, false)
+            ->where('m.kode_materi IS NOT NULL')
+            ->order_by('m.kode_materi', 'ASC')
+            ->limit(5)
+            ->get()
+            ->result();
+    }
+
+    public function get_perkembangan_terbaru($id_siswa)
+    {
+        return $this->db
+            ->select('
+            pms.kode_materi,
+            m.judul AS judul_materi,
+            pms.status,
+            pms.halaman_terakhir,
+            pms.tanggal_mulai,
+            pms.tanggal_selesai
+        ')
+            ->from('progres_materi_siswa pms')
+            ->join('materi m', 'm.kode_materi = pms.kode_materi')
+            ->where('pms.id_pengguna', $id_siswa)
+            ->order_by('pms.tanggal_mulai', 'DESC')
+            ->limit(5)
+            ->get()
+            ->result();
+    }
+
+    public function get_siswa($id_pengguna)
+    {
+        return $this->db
+            ->select('
+            u.id_pengguna,
+            u.nama,
+            u.email,
+            u.kode_kelas,
+            k.nama_kelas
+        ')
+            ->from('users u')
+            ->join('kelas k', 'k.kode_kelas = u.kode_kelas', 'left')
+            ->where('u.id_pengguna', $id_pengguna)
+            ->where('u.role', 'Siswa')
+            ->get()
+            ->row();
+    }
+
+    public function get_progress_materi($id_pengguna)
+    {
+        return $this->db
+            ->select('
+            m.kode_materi,
+            m.judul AS judul_materi,
+            mo.judul AS judul_modul,
+            IFNULL(pms.status, "Belum Mulai") AS status,
+            IFNULL(pms.halaman_terakhir, 0) AS halaman_terakhir,
+            pms.tanggal_mulai,
+            pms.tanggal_selesai
+        ', false)
+            ->from('users u')
+            ->join('modul mo', 'mo.kode_kelas = u.kode_kelas', 'left')
+            ->join('materi m', 'm.kode_modul = mo.kode_modul', 'left')
+            ->join('progres_materi_siswa pms', 'pms.id_pengguna = u.id_pengguna AND pms.kode_materi = m.kode_materi', 'left')
+            ->where('u.id_pengguna', $id_pengguna)
+            ->where('m.kode_materi IS NOT NULL')
+            ->order_by('mo.kode_modul', 'ASC')
+            ->order_by('m.kode_materi', 'ASC')
+            ->get()
+            ->result();
+    }
+
+    public function get_hasil_soal($id_pengguna)
+    {
+        return $this->db
+            ->select('
+            js.kode_jawabansis,
+            s.kode_soal,
+            s.pertanyaan,
+            m.kode_materi,
+            m.judul AS judul_materi,
+            js.jawaban AS jawaban_siswa,
+            j.jawaban_benar,
+            CASE
+                WHEN js.jawaban = j.jawaban_benar THEN "Benar"
+                ELSE "Salah"
+            END AS status_jawaban
+        ', false)
+            ->from('jawaban_siswa js')
+            ->join('soal s', 's.kode_soal = js.kode_soal')
+            ->join('materi m', 'm.kode_materi = s.kode_materi')
+            ->join('jawaban j', 'j.kode_soal = s.kode_soal')
+            ->where('js.id_pengguna', $id_pengguna)
+            ->order_by('js.kode_jawabansis', 'DESC')
+            ->get()
+            ->result();
+    }
 }
