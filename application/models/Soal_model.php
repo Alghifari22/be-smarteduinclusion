@@ -177,6 +177,9 @@ class Soal_model extends \CI_Model {
                 s.kode_materi,
                 m.judul AS judul_materi,
                 j.kode_jawaban,
+                j.opsi_a,
+                j.opsi_b,
+                j.opsi_c,
                 j.jawaban_benar
             ')
             ->from('soal s')
@@ -230,6 +233,30 @@ class Soal_model extends \CI_Model {
         return $this->db->affected_rows() >= 0;
     }
 
+    public function create_complete($data_soal, $data_jawaban)
+    {
+        $this->db->trans_start();
+        $this->db->insert($this->table_soal, $data_soal);
+        $this->db->insert($this->table_jawaban, $data_jawaban);
+        $this->db->trans_complete();
+        return $this->db->trans_status();
+    }
+
+    public function update_complete($kode_soal, $data_soal, $data_jawaban)
+    {
+        $this->db->trans_start();
+        $this->db->where('kode_soal', $kode_soal)->update($this->table_soal, $data_soal);
+        if ($this->jawaban_exists_by_soal($kode_soal)) {
+            $this->db->where('kode_soal', $kode_soal)->update($this->table_jawaban, $data_jawaban);
+        } else {
+            $data_jawaban['kode_jawaban'] = $this->generate_kode_jawaban();
+            $data_jawaban['kode_soal'] = $kode_soal;
+            $this->db->insert($this->table_jawaban, $data_jawaban);
+        }
+        $this->db->trans_complete();
+        return $this->db->trans_status();
+    }
+
     public function delete_soal($kode_soal)
     {
         $this->db->where('kode_soal', $kode_soal);
@@ -250,6 +277,58 @@ class Soal_model extends \CI_Model {
         return $this->db
             ->where('kode_materi', $kode_materi)
             ->count_all_results('materi') > 0;
+    }
+
+    public function get_kode_mapel_guru($id_pengguna)
+    {
+        $guru = $this->db
+            ->select('kode_mapel')
+            ->where('id_pengguna', $id_pengguna)
+            ->where('role', 'Guru')
+            ->get('users')
+            ->row();
+
+        return $guru ? $guru->kode_mapel : null;
+    }
+
+    public function materi_belongs_to_guru($kode_materi, $id_pengguna)
+    {
+        $kode_mapel = $this->get_kode_mapel_guru($id_pengguna);
+        return $kode_mapel && $this->db
+            ->from('materi m')
+            ->join('modul mo', 'mo.kode_modul = m.kode_modul')
+            ->where('m.kode_materi', $kode_materi)
+            ->where('mo.kode_mapel', $kode_mapel)
+            ->count_all_results() > 0;
+    }
+
+    public function soal_belongs_to_guru($kode_soal, $id_pengguna)
+    {
+        $kode_mapel = $this->get_kode_mapel_guru($id_pengguna);
+        return $kode_mapel && $this->db
+            ->from('soal s')
+            ->join('materi m', 'm.kode_materi = s.kode_materi')
+            ->join('modul mo', 'mo.kode_modul = m.kode_modul')
+            ->where('s.kode_soal', $kode_soal)
+            ->where('mo.kode_mapel', $kode_mapel)
+            ->count_all_results() > 0;
+    }
+
+    public function get_all_for_guru($id_pengguna, $kode_materi = null)
+    {
+        $kode_mapel = $this->get_kode_mapel_guru($id_pengguna);
+        if (!$kode_mapel) return [];
+
+        $this->db
+            ->select('s.kode_soal, s.pertanyaan, s.gambar, s.kode_materi, m.judul AS judul_materi, j.kode_jawaban, j.opsi_a, j.opsi_b, j.opsi_c, j.jawaban_benar')
+            ->from('soal s')
+            ->join('materi m', 'm.kode_materi = s.kode_materi')
+            ->join('modul mo', 'mo.kode_modul = m.kode_modul')
+            ->join('jawaban j', 'j.kode_soal = s.kode_soal', 'left')
+            ->where('mo.kode_mapel', $kode_mapel);
+
+        if ($kode_materi) $this->db->where('s.kode_materi', $kode_materi);
+        return $this->db->order_by('s.kode_soal', 'DESC')->get()->result();
     }
 
     public function generate_kode_soal()

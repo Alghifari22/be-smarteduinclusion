@@ -81,6 +81,7 @@ $route['materi/(:any)/progress'] = 'Materi/update_progress/$1';
 
 $route['materi'] = 'Materi/index';
 $route['materi/(:any)/details'] = 'Materi/pages/$1';
+$route['detail-materi/(:any)/gambar'] = 'Materi/page_image/$1';
 $route['detail-materi/(:any)'] = 'Materi/page_detail/$1';
 $route['materi/(:any)'] = 'Materi/detail/$1';
 
@@ -100,10 +101,12 @@ $route['modul/(:any)'] = 'Modul/detail/$1';
 
 // Soal dan Jawaban Endpoints
 $route['soal'] = 'Soal/index';
+$route['soal/(:any)/gambar'] = 'Soal/gambar/$1';
 $route['soal/(:any)'] = 'Soal/detail/$1';
 $route['soal/(:any)/jawaban'] = 'Soal/jawaban/$1';
 
 // Laporan Endpoints
 $route['laporan'] = 'Laporan/index';
+$route['laporan/guru'] = 'Laporan/guru';
 $route['laporan/siswa/(:any)'] = 'Laporan/siswa/$1';
 $route['laporan-anak'] = 'Dashboard/laporan_anak';

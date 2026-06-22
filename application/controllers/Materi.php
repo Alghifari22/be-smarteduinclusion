@@ -510,4 +510,47 @@ class Materi extends \CI_Controller {
 
         return $this->response_json(405, ['status' => false, 'message' => 'Method tidak diizinkan']);
     }
+
+    public function page_image($kode_detail)
+    {
+        $decoded = $this->authenticated_user();
+        $detail = $this->Materi_model->get_detail_page($kode_detail);
+        if (!$detail || !$this->Materi_model->materi_belongs_to_guru($detail->kode_materi, $decoded->id_pengguna)) {
+            return $this->response_json(404, ['status' => false, 'message' => 'Detail materi tidak ditemukan']);
+        }
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            return $this->response_json(405, ['status' => false, 'message' => 'Method tidak diizinkan']);
+        }
+        if (empty($_FILES['gambar']) || $_FILES['gambar']['error'] !== UPLOAD_ERR_OK) {
+            return $this->response_json(400, ['status' => false, 'message' => 'File gambar wajib dipilih']);
+        }
+
+        $file = $_FILES['gambar'];
+        if ($file['size'] > 5 * 1024 * 1024) {
+            return $this->response_json(400, ['status' => false, 'message' => 'Ukuran gambar maksimal 5 MB']);
+        }
+        $mime = (new finfo(FILEINFO_MIME_TYPE))->file($file['tmp_name']);
+        $extensions = ['image/jpeg' => 'jpg', 'image/png' => 'png', 'image/webp' => 'webp'];
+        if (!isset($extensions[$mime])) {
+            return $this->response_json(400, ['status' => false, 'message' => 'Format gambar harus JPG, PNG, atau WEBP']);
+        }
+
+        $directory = FCPATH . 'uploads/materi/';
+        if (!is_dir($directory) && !mkdir($directory, 0755, true)) {
+            return $this->response_json(500, ['status' => false, 'message' => 'Folder upload tidak dapat dibuat']);
+        }
+        $filename = strtolower($kode_detail) . '-' . uniqid() . '.' . $extensions[$mime];
+        if (!move_uploaded_file($file['tmp_name'], $directory . $filename)) {
+            return $this->response_json(500, ['status' => false, 'message' => 'Gagal mengunggah gambar']);
+        }
+
+        $path = 'uploads/materi/' . $filename;
+        $this->Materi_model->update_detail($kode_detail, ['gambar' => $path]);
+        if (!empty($detail->gambar) && strpos($detail->gambar, 'uploads/materi/') === 0) {
+            $old_file = FCPATH . $detail->gambar;
+            if (is_file($old_file)) unlink($old_file);
+        }
+
+        return $this->response_json(200, ['status' => true, 'message' => 'Gambar materi berhasil disimpan', 'data' => ['gambar' => $path]]);
+    }
 }

@@ -7,6 +7,13 @@ class Laporan extends CI_Controller
     {
         parent::__construct();
         $this->load->model('Laporan_model');
+        $this->load->library('jwt');
+    }
+
+    private function authenticate()
+    {
+        $token = $this->jwt->get_token_from_request();
+        return $token ? $this->jwt->verify($token) : false;
     }
 
     private function response_json($status_code, $data)
@@ -62,6 +69,23 @@ class Laporan extends CI_Controller
             'message' => 'Detail laporan siswa berhasil diambil',
             'data' => $data
         ]);
+    }
+
+    public function guru()
+    {
+        if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
+            return $this->response_json(405, ['status' => false, 'message' => 'Method tidak diizinkan']);
+        }
+        $decoded = $this->authenticate();
+        if (!$decoded) {
+            return $this->response_json(401, ['status' => false, 'message' => 'Unauthorized']);
+        }
+
+        $data = $this->Laporan_model->get_laporan_guru($decoded->id_pengguna, $this->input->get('kode_kelas'));
+        if (!$data) {
+            return $this->response_json(403, ['status' => false, 'message' => 'Akun guru belum memiliki mata pelajaran']);
+        }
+        return $this->response_json(200, ['status' => true, 'message' => 'Laporan performa berhasil diambil', 'data' => $data]);
     }
 
     public function laporan_anak()
