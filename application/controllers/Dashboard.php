@@ -178,4 +178,108 @@ class Dashboard extends \CI_Controller
             'data' => $data
         ]);
     }
+
+    private function response_json($status_code, $data)
+    {
+        return $this->output
+            ->set_content_type('application/json')
+            ->set_status_header($status_code)
+            ->set_output(json_encode($data, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
+    }
+
+    public function orang_tua()
+    {
+        if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
+            return $this->response_json(405, [
+                'status' => false,
+                'message' => 'Method tidak diizinkan'
+            ]);
+        }
+
+        $id_pengguna = $this->input->get('id_pengguna');
+
+        if (!$id_pengguna) {
+            return $this->response_json(400, [
+                'status' => false,
+                'message' => 'id_pengguna wajib dikirim'
+            ]);
+        }
+
+        $orang_tua = $this->Dashboard_model->get_orangtua($id_pengguna);
+
+        if (!$orang_tua) {
+            return $this->response_json(404, [
+                'status' => false,
+                'message' => 'Data orang tua tidak ditemukan'
+            ]);
+        }
+
+        $anak = $this->Dashboard_model->get_anak($id_pengguna);
+
+        if (!$anak) {
+            return $this->response_json(404, [
+                'status' => false,
+                'message' => 'Data anak untuk orang tua ini belum tersedia'
+            ]);
+        }
+
+        $id_siswa = $anak->id_pengguna;
+
+        $data = [
+            'orang_tua' => $orang_tua,
+            'anak' => $anak,
+            'ringkasan' => $this->Dashboard_model->get_ringkasan($id_siswa),
+            'progress_mingguan' => $this->Dashboard_model->get_progress_mingguan($id_siswa),
+            'fokus_minggu_ini' => $this->Dashboard_model->get_fokus_minggu_ini($id_siswa),
+            'tugas_belum_selesai' => $this->Dashboard_model->get_tugas_belum_selesai($id_siswa),
+            'perkembangan_terbaru' => $this->Dashboard_model->get_perkembangan_terbaru($id_siswa)
+        ];
+
+        return $this->response_json(200, [
+            'status' => true,
+            'message' => 'Dashboard orang tua berhasil diambil',
+            'data' => $data
+        ]);
+    }
+
+    public function laporan_anak()
+    {
+        if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
+            return $this->response_json(405, [
+                'status' => false,
+                'message' => 'Method tidak diizinkan'
+            ]);
+        }
+
+        $id_pengguna = $this->input->get('id_pengguna');
+
+        if (!$id_pengguna) {
+            return $this->response_json(400, [
+                'status' => false,
+                'message' => 'id_pengguna wajib dikirim'
+            ]);
+        }
+
+        $siswa = $this->Dashboard_model->get_siswa($id_pengguna);
+
+        if (!$siswa) {
+            return $this->response_json(404, [
+                'status' => false,
+                'message' => 'Data siswa tidak ditemukan'
+            ]);
+        }
+
+        $data = [
+            'siswa' => $siswa,
+            'ringkasan' => $this->Dashboard_model->get_ringkasan($id_pengguna),
+            'progress_materi' => $this->Dashboard_model->get_progress_materi($id_pengguna),
+            'hasil_soal' => $this->Dashboard_model->get_hasil_soal($id_pengguna)
+        ];
+
+        return $this->response_json(200, [
+            'status' => true,
+            'message' => 'Laporan anak berhasil diambil',
+            'data' => $data
+        ]);
+    }
 }

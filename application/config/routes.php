@@ -86,3 +86,22 @@ $route['api/siswa/update/(:any)/progress'] = 'Latihan/update_progress_latihan/$1
 $route['api/latihan/jawab'] = 'Latihan/jawab';
 $route['api/latihan/(:any)/selesai'] = 'Latihan/selesai/$1';
 $route['api/latihan/(:any)'] = 'Latihan/detail/$1';$route['api/dashboard/guru'] = 'Dashboard/guru';
+$route['api/dashboard/orang-tua'] = 'Dashboard/orang_tua';
+
+// Modul Endpoints
+$route['api/modul'] = 'Modul/index';
+$route['api/modul/(:any)'] = 'Modul/detail/$1';
+
+// Materi Endpoints
+$route['api/materi'] = 'Materi/index';
+$route['api/materi/(:any)'] = 'Materi/detail/$1';
+
+// Soal dan Jawaban Endpoints
+$route['api/soal'] = 'Soal/index';
+$route['api/soal/(:any)'] = 'Soal/detail/$1';
+$route['api/soal/(:any)/jawaban'] = 'Soal/jawaban/$1';
+
+// Laporan Endpoints
+$route['api/laporan'] = 'Laporan/index';
+$route['api/laporan/siswa/(:any)'] = 'Laporan/siswa/$1';
+$route['api/laporan-anak'] = 'Dashboard/laporan_anak';
