@@ -85,4 +85,4 @@ $route['api/siswa/progress/(:any)'] = 'Latihan/progress_latihan/$1';
 $route['api/siswa/update/(:any)/progress'] = 'Latihan/update_progress_latihan/$1';
 $route['api/latihan/jawab'] = 'Latihan/jawab';
 $route['api/latihan/(:any)/selesai'] = 'Latihan/selesai/$1';
-$route['api/latihan/(:any)'] = 'Latihan/detail/$1';
+$route['api/latihan/(:any)'] = 'Latihan/detail/$1';$route['api/dashboard/guru'] = 'Dashboard/guru';
